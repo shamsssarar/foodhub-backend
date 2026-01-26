@@ -1,7 +1,7 @@
-import { Prisma } from "@prisma/client";
+import { User } from "@prisma/client";
 import prisma from "../../../shared/prisma";
 
-const createUserIntoDB = async (data: Prisma.UserUncheckedCreateInput) => {
+const createUserIntoDB = async (data: User) => {
   const result = await prisma.user.create({
     data,
   });
