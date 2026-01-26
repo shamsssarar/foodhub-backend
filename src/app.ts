@@ -2,6 +2,7 @@ import express, { Application, Request, Response } from "express";
 import cors from "cors";
 import { UserRoutes } from "./app/modules/User/user.route";
 import { CategoryRoutes } from "./app/modules/Category/category.route";
+import { FoodRoutes } from "./app/modules/Food/food.route";
 
 const app: Application = express();
 
@@ -12,6 +13,7 @@ app.use(cors());
 // Application Routes
 app.use("/api", UserRoutes);
 app.use("/api", CategoryRoutes);
+app.use("/api", FoodRoutes);
 
 app.get("/", (req: Request, res: Response) => {
   res.send("FoodHub Backend is Running!");
