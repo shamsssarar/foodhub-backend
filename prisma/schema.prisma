@@ -6,12 +6,13 @@
 
 generator client {
   provider = "prisma-client-js"
+  engineType = "library"
 
 }
 
 datasource db {
   provider = "postgresql"
-  // url      = env("DATABASE_URL")
+  url      = env("DATABASE_URL")
 }
 
 model User {
@@ -30,4 +31,28 @@ enum UserRole {
   CUSTOMER
   PROVIDER
   ADMIN
+}
+
+model Category {
+  id        String   @id @default(uuid())
+  name      String
+  foods     Food[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("categories")
+}
+
+model Food {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  price       Float
+  imageUrl    String?
+  categoryId  String
+  category    Category @relation(fields: [categoryId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("foods")
 }
