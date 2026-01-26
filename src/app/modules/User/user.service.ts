@@ -8,6 +8,12 @@ const createUserIntoDB = async (data: User) => {
   return result;
 };
 
+const getAllUsersFromDB = async () => {
+  const result = await prisma.user.findMany();
+  return result;
+};
+
 export const UserService = {
   createUserIntoDB,
+  getAllUsersFromDB,
 };
