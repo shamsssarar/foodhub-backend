@@ -3,16 +3,20 @@ import { OrderService } from "./order.service";
 
 const createOrder = async (req: Request, res: Response) => {
   try {
-    const result = await OrderService.createOrderIntoDB(req.body);
+    
+    const userId = req.user.userId;
+    const { items } = req.body; 
+    const result = await OrderService.createOrderIntoDB(userId, { items });
+
     res.status(200).json({
       success: true,
       message: "Order placed successfully!",
       data: result,
     });
-  } catch (err) {
+  } catch (err: any) {
     res.status(500).json({
       success: false,
-      message: "Something went wrong",
+      message: err.message || "Something went wrong",
       error: err,
     });
   }

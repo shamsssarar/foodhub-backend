@@ -21,6 +21,7 @@ model User {
   email     String   @unique
   password  String
   role      UserRole @default(CUSTOMER) // CUSTOMER, PROVIDER, ADMIN
+  status UserStatus @default(ACTIVE)
   
   // Relations
   providerProfile ProviderProfile? // Only if role is PROVIDER
@@ -31,6 +32,11 @@ model User {
   updatedAt DateTime @updatedAt
 
   @@map("users")
+}
+
+enum UserStatus {
+  ACTIVE
+  BLOCKED
 }
 
 enum UserRole {
@@ -79,6 +85,8 @@ model Meal {
   category    Category @relation(fields: [categoryId], references: [id])
   
   reviews     Review[]
+
+  orderItems OrderItem[]
   
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -93,6 +101,7 @@ model Order {
   user       User        @relation(fields: [userId], references: [id])
   status     OrderStatus @default(PENDING)
   totalPrice Float
+  orderItems OrderItem[]
   createdAt  DateTime    @default(now())
   updatedAt  DateTime    @updatedAt
 
@@ -103,6 +112,21 @@ enum OrderStatus {
   PENDING
   DELIVERED
   CANCELLED
+}
+
+model OrderItem{
+  id        String   @id @default(uuid())
+  
+  orderId   String
+  order     Order    @relation(fields: [orderId], references: [id])
+  
+  mealId    String
+  meal      Meal     @relation(fields: [mealId], references: [id])
+  
+  quantity  Int
+  price     Float    // Price at the time of order
+
+  @@map("order_items")
 }
 
 // 6. Reviews (Customer reviews for meals)
