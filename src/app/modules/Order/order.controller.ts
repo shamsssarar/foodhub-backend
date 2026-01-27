@@ -35,7 +35,31 @@ const getAllOrders = async (req: Request, res: Response) => {
   }
 };
 
+const updateStatus = async (req: Request, res: Response) => {
+  try {
+    const { orderId } = req.params;
+    const { status } = req.body; // We will send { "status": "DELIVERED" }
+
+    const result = await OrderService.updateOrderStatusInDB(
+      orderId as string,
+      status,
+    );
+    res.status(200).json({
+      success: true,
+      message: "Order status updated successfully!",
+      data: result,
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: "Something went wrong",
+      error: err,
+    });
+  }
+};
+
 export const OrderController = {
   createOrder,
   getAllOrders,
+  updateStatus,
 };
