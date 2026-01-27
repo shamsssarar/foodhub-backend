@@ -67,7 +67,7 @@ model Category {
   @@map("categories")
 }
 
-// 4. Meals (Renamed from 'Food' as per requirements)
+// 4. Meals 
 model Meal {
   id          String   @id @default(uuid())
   name        String
@@ -93,10 +93,6 @@ model Order {
   user       User        @relation(fields: [userId], references: [id])
   status     OrderStatus @default(PENDING)
   totalPrice Float
-  
-  // In a real app, you would have an OrderItem table here, 
-  // but for this assignment, we keep it simple or store IDs.
-  
   createdAt  DateTime    @default(now())
   updatedAt  DateTime    @updatedAt
 

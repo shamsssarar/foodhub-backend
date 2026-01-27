@@ -5,6 +5,7 @@ import { CategoryRoutes } from "./app/modules/Category/category.route";
 import { MealRoutes } from "./app/modules/Meal/meal.route";
 import { OrderRoutes } from "./app/modules/Order/order.route";
 import { ProfileRoutes } from "./app/modules/ProviderProfile/profile.route";
+import { ReviewRoutes } from "./app/modules/Service/review.route";
 
 const app: Application = express();
 
@@ -18,6 +19,7 @@ app.use("/api", CategoryRoutes);
 app.use("/api", MealRoutes);
 app.use("/api", OrderRoutes);
 app.use("/api", ProfileRoutes);
+app.use("/api", ReviewRoutes);
 
 app.get("/", (req: Request, res: Response) => {
   res.send("FoodHub Backend is Running!");
