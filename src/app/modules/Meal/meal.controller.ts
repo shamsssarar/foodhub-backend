@@ -1,9 +1,9 @@
 import { Request, Response } from "express";
-import { FoodService } from "./food.service";
+import { MealService } from "./meal.service";
 
-const createFood = async (req: Request, res: Response) => {
+const createMeal = async (req: Request, res: Response) => {
   try {
-    const result = await FoodService.createFoodIntoDB(req.body);
+    const result = await MealService.createMealIntoDB(req.body);
     res.status(200).json({
       success: true,
       message: "Food created successfully!",
@@ -18,9 +18,9 @@ const createFood = async (req: Request, res: Response) => {
   }
 };
 
-const getAllFoods = async (req: Request, res: Response) => {
+const getAllMeals = async (req: Request, res: Response) => {
   try {
-    const result = await FoodService.getAllFoodsFromDB();
+    const result = await MealService.getAllMealsFromDB();
     res.status(200).json({
       success: true,
       message: "Foods retrieved successfully!",
@@ -35,7 +35,7 @@ const getAllFoods = async (req: Request, res: Response) => {
   }
 };
 
-export const FoodController = {
-  createFood,
-  getAllFoods,
+export const MealController = {
+  createMeal,
+  getAllMeals,
 };

@@ -5,9 +5,8 @@
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
-  provider = "prisma-client-js"
+  provider   = "prisma-client-js"
   engineType = "library"
-
 }
 
 datasource db {
@@ -15,18 +14,23 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// 1. Users Table (Customers & Providers)
 model User {
   id        String   @id @default(uuid())
   name      String
   email     String   @unique
   password  String
-  role      UserRole @default(CUSTOMER)
+  role      UserRole @default(CUSTOMER) // CUSTOMER, PROVIDER, ADMIN
+  
+  // Relations
+  providerProfile ProviderProfile? // Only if role is PROVIDER
+  orders          Order[]
+  reviews         Review[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  orders    Order[]
   @@map("users")
-
 }
 
 enum UserRole {
@@ -35,38 +39,66 @@ enum UserRole {
   ADMIN
 }
 
+// 2. Provider Profile (Restaurant specific info)
+model ProviderProfile {
+  id             String @id @default(uuid())
+  restaurantName String
+  cuisineType    String
+  address        String
+  phone          String
+  
+  userId         String @unique
+  user           User   @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("provider_profiles")
+}
+
+// 3. Categories (Cuisine types like "Italian", "Desi")
 model Category {
   id        String   @id @default(uuid())
   name      String
-  foods     Food[]
+  meals     Meal[]   // Relation to Meals
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@map("categories")
 }
 
-model Food {
+// 4. Meals (Renamed from 'Food' as per requirements)
+model Meal {
   id          String   @id @default(uuid())
   name        String
   description String?
   price       Float
   imageUrl    String?
+  
   categoryId  String
   category    Category @relation(fields: [categoryId], references: [id])
+  
+  reviews     Review[]
+  
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  @@map("foods")
+  @@map("meals")
 }
 
+// 5. Orders (Customer orders)
 model Order {
-  id        String      @id @default(uuid())
-  userId    String
-  user      User        @relation(fields: [userId], references: [id])
-  status    OrderStatus @default(PENDING)
+  id         String      @id @default(uuid())
+  userId     String
+  user       User        @relation(fields: [userId], references: [id])
+  status     OrderStatus @default(PENDING)
   totalPrice Float
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
+  
+  // In a real app, you would have an OrderItem table here, 
+  // but for this assignment, we keep it simple or store IDs.
+  
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
 
   @@map("orders")
 }
@@ -75,4 +107,22 @@ enum OrderStatus {
   PENDING
   DELIVERED
   CANCELLED
+}
+
+// 6. Reviews (Customer reviews for meals)
+model Review {
+  id        String   @id @default(uuid())
+  rating    Int      // e.g., 1 to 5
+  comment   String?
+  
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  
+  mealId    String
+  meal      Meal     @relation(fields: [mealId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("reviews")
 }

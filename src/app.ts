@@ -2,7 +2,7 @@ import express, { Application, Request, Response } from "express";
 import cors from "cors";
 import { UserRoutes } from "./app/modules/User/user.route";
 import { CategoryRoutes } from "./app/modules/Category/category.route";
-import { FoodRoutes } from "./app/modules/Food/food.route";
+import { FoodRoutes } from "./app/modules/Meal/meal.route";
 import { OrderRoutes } from "./app/modules/Order/order.route";
 
 const app: Application = express();
