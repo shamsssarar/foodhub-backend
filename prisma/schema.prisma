@@ -54,7 +54,7 @@ model ProviderProfile {
   phone          String
   
   userId         String @unique
-  user           User   @relation(fields: [userId], references: [id])
+  user           User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -82,7 +82,7 @@ model Meal {
   imageUrl    String?
   
   categoryId  String
-  category    Category @relation(fields: [categoryId], references: [id])
+  category    Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   
   reviews     Review[]
 
@@ -98,7 +98,7 @@ model Meal {
 model Order {
   id         String      @id @default(uuid())
   userId     String
-  user       User        @relation(fields: [userId], references: [id])
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   status     OrderStatus @default(PENDING)
   totalPrice Float
   orderItems OrderItem[]
@@ -119,10 +119,10 @@ model OrderItem{
   id        String   @id @default(uuid())
   
   orderId   String
-  order     Order    @relation(fields: [orderId], references: [id])
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
   
   mealId    String
-  meal      Meal     @relation(fields: [mealId], references: [id])
+  meal      Meal     @relation(fields: [mealId], references: [id], onDelete: Cascade)
   
   quantity  Int
   price     Float    // Price at the time of order
@@ -137,10 +137,10 @@ model Review {
   comment   String?
   
   userId    String
-  user      User     @relation(fields: [userId], references: [id])
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   
   mealId    String
-  meal      Meal     @relation(fields: [mealId], references: [id])
+  meal      Meal     @relation(fields: [mealId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

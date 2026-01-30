@@ -1,5 +1,6 @@
-import { NextFunction, Request, Response } from 'express';
-import jwt, { JwtPayload } from 'jsonwebtoken';
+import { NextFunction, Request, Response } from "express";
+import jwt, { JwtPayload } from "jsonwebtoken";
+import config from "../../config";
 
 // Extend Express Request type to include 'user'
 declare global {
@@ -16,27 +17,27 @@ const auth = (...requiredRoles: string[]) => {
       const token = req.headers.authorization;
 
       if (!token) {
-        throw new Error('You are not authorized!');
+        throw new Error("You are not authorized!");
       }
 
       // Verify Token
       const verifiedUser = jwt.verify(
         token,
-        process.env.JWT_SECRET || 'secret'
+        config.jwt_access_secret as string,
       ) as JwtPayload;
 
       req.user = verifiedUser;
 
       // Check Role
       if (requiredRoles.length && !requiredRoles.includes(verifiedUser.role)) {
-        throw new Error('Forbidden Access');
+        throw new Error("Forbidden Access");
       }
 
       next();
     } catch (err: any) {
       res.status(401).json({
         success: false,
-        message: err.message || 'Unauthorized',
+        message: err.message || "Unauthorized",
       });
     }
   };

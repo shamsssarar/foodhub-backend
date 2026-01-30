@@ -1,7 +1,8 @@
-import bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken';
-import prisma from '../../../shared/prisma';
-import { User } from '@prisma/client';
+import bcrypt from "bcrypt";
+import jwt, { JwtPayload, Secret, SignOptions } from "jsonwebtoken";
+import prisma from "../../../shared/prisma";
+import { User } from "@prisma/client";
+import config from "../../../config";
 
 // REGISTER
 const registerUser = async (payload: User) => {
@@ -11,7 +12,7 @@ const registerUser = async (payload: User) => {
   });
 
   if (existingUser) {
-    throw new Error('Email already exists!');
+    throw new Error("Email already exists!");
   }
 
   // 2. Hash the Password (Security)
@@ -31,45 +32,84 @@ const registerUser = async (payload: User) => {
 };
 
 // LOGIN
+const createToken = (
+  payload: { userId: string; role: string },
+  secret: Secret,
+  expiresIn: number,
+) => {
+  const options: SignOptions = {
+    expiresIn: expiresIn as number,
+  };
+  return jwt.sign(payload, secret as Secret, options);
+};
+
+// --- Login User Function ---
 const loginUser = async (payload: { email: string; password: string }) => {
   // 1. Find User
-  const user = await prisma.user.findUnique({
+  
+  const userData = await prisma.user.findUnique({
     where: { email: payload.email },
   });
 
-  if (!user) {
-    throw new Error('User does not exist');
+  if (!userData) {
+    throw new Error("User does not exist");
   }
 
   // 2. Check if Blocked
-  if (user.status === 'BLOCKED') {
-    throw new Error('User is blocked!');
+  if (userData.status === "BLOCKED") {
+    throw new Error("User is blocked!");
   }
 
-  // 3. Verify Password
-  const isPasswordMatched = await bcrypt.compare(payload.password, user.password);
+  // 3. Check Password
+  const isPasswordMatched = await bcrypt.compare(
+    payload.password,
+    userData.password,
+  );
   if (!isPasswordMatched) {
-    throw new Error('Password incorrect');
+    throw new Error("Password incorrect!");
   }
 
-  // 4. Generate Access Token (The "ID Card")
-  const accessToken = jwt.sign(
-    { userId: user.id, email: user.email, role: user.role },
-    process.env.JWT_SECRET || 'secret', // Ideally use .env
-    { expiresIn: '10d' }
+  // 4. Create Tokens
+  const jwtPayload = {
+    userId: userData.id,
+    role: userData.role,
+  };
+
+  const accessToken = createToken(
+    jwtPayload,
+    config.jwt_access_secret as string,
+    config.jwt_access_expires_in as any,
   );
 
+  const refreshToken = createToken(
+    jwtPayload,
+    config.jwt_refresh_secret as string,
+    config.jwt_refresh_expires_in as any,
+  );
+
+  // 5. Return Data
   return {
     accessToken,
+    refreshToken,
+    needsPasswordChange: false,
     user: {
-      id: user.id,
-      email: user.email,
-      role: user.role,
+      id: userData.id,
+      name: userData.name,
+      email: userData.email,
+      role: userData.role,
     },
+  };
+};
+
+const logoutUser = async () => {
+  return {
+    success: true,
+    message: "Logged out successfully",
   };
 };
 
 export const AuthService = {
   registerUser,
   loginUser,
+  logoutUser,
 };
