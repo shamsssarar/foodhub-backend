@@ -3,9 +3,8 @@ import { OrderService } from "./order.service";
 
 const createOrder = async (req: Request, res: Response) => {
   try {
-    
     const userId = req.user.userId;
-    const { items } = req.body; 
+    const { items } = req.body;
     const result = await OrderService.createOrderIntoDB(userId, { items });
 
     res.status(200).json({
@@ -24,7 +23,8 @@ const createOrder = async (req: Request, res: Response) => {
 
 const getAllOrders = async (req: Request, res: Response) => {
   try {
-    const result = await OrderService.getAllOrdersFromDB();
+    const user = (req as any).user;
+    const result = await OrderService.getAllOrdersFromDB(user);
     res.status(200).json({
       success: true,
       message: "Orders retrieved successfully!",
@@ -62,8 +62,28 @@ const updateStatus = async (req: Request, res: Response) => {
   }
 };
 
+// src/app/modules/Order/order.controller.ts
+const getOrdersByUserId = async (req: Request, res: Response) => {
+  try {
+    const { userId } = req.params;
+
+    const result = await OrderService.getOrdersByUserIdFromDB(userId as string);
+    res.status(200).json({
+      success: true,
+      message: "User orders retrieved successfully!",
+      data: result,
+    });
+  } catch (err) {
+    console.log(err);
+    res
+      .status(500)
+      .json({ success: false, message: "Error fetching orders", error: err });
+  }
+};
+
 export const OrderController = {
   createOrder,
   getAllOrders,
   updateStatus,
+  getOrdersByUserId,
 };

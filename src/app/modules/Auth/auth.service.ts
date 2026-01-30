@@ -4,6 +4,7 @@ import prisma from "../../../shared/prisma";
 import { User } from "@prisma/client";
 import config from "../../../config";
 
+
 // REGISTER
 const registerUser = async (payload: User) => {
   // 1. Check if user already exists
@@ -46,9 +47,9 @@ const createToken = (
 // --- Login User Function ---
 const loginUser = async (payload: { email: string; password: string }) => {
   // 1. Find User
-  
+
   const userData = await prisma.user.findUnique({
-    where: { email: payload.email },
+    where: { email: payload.email, },
   });
 
   if (!userData) {

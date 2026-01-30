@@ -1,10 +1,12 @@
 import { Order, OrderStatus } from "@prisma/client"; // Import OrderStatus if needed
 import prisma from "../../../shared/prisma";
 import ApiError from "../../../errors/ApiError"; // Fixed import (No curly braces)
+import { any } from "zod";
+import { error } from "node:console";
 
 const createOrderIntoDB = async (
   userId: string,
-  payload: { items: { mealId: string; quantity: number }[] }
+  payload: { items: { mealId: string; quantity: number }[] },
 ) => {
   // 1. Calculate Total Price & Verify Meals exist
   let calculatedTotalPrice = 0;
@@ -50,25 +52,51 @@ const createOrderIntoDB = async (
   return result;
 };
 
-const getAllOrdersFromDB = async () => {
-  const result = await prisma.order.findMany({
-    include: {
-      user: {
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          role: true, // Only show safe user info
+const getAllOrdersFromDB = async (user: any) => {
+  if (user.role === "CUSTOMER") {
+    return await prisma.order.findMany({
+      where: {
+        userId: user.id,
+      },
+      include: {
+        orderItems: {
+          include: {
+            meal: true,
+          },
         },
       },
-      orderItems: {
-        include: {
-          meal: true, // Shows the Meal details inside the order
+    });
+  } else if (user.role === "PROVIDER") {
+    return await prisma.order.findMany({
+      where: {
+        userId: user.id,
+      },
+      include: {
+        orderItems: {
+          include: {
+            meal: true,
+          },
+        },
+        user: true,
+      },
+    });
+  } else if (user.role === "ADMIN") {
+    // Only admins see everything
+    const result = await prisma.order.findMany({
+      include: {
+        user: true,
+        orderItems: {
+          include: {
+            meal: true,
+          },
         },
       },
-    },
-  });
-  return result;
+    });
+    return result;
+  } else {
+    console.log(error);
+    throw new ApiError(404, "jhj");
+  }
 };
 
 const updateOrderStatusInDB = async (orderId: string, status: OrderStatus) => {
@@ -79,8 +107,25 @@ const updateOrderStatusInDB = async (orderId: string, status: OrderStatus) => {
   return result;
 };
 
+// src/app/modules/Order/order.service.ts
+const getOrdersByUserIdFromDB = async (userId: string) => {
+  return await prisma.order.findMany({
+    where: {
+      userId: userId, // Filter strictly by the provided ID
+    },
+    include: {
+      user: true,
+      orderItems: true,
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+};
+
 export const OrderService = {
   createOrderIntoDB,
   getAllOrdersFromDB,
   updateOrderStatusInDB,
+  getOrdersByUserIdFromDB,
 };

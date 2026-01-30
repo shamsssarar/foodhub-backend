@@ -52,15 +52,16 @@ model ProviderProfile {
   cuisineType    String
   address        String
   phone          String
-  
   userId         String @unique
+  category       Category @relation(fields: [cuisineType], references: [name])
   user           User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@map("provider_profiles")
 }
+
+
 
 // 3. Categories (Cuisine types like "Italian", "Desi")
 model Category {
@@ -72,6 +73,8 @@ model Category {
 
   @@map("categories")
 }
+
+
 
 // 4. Meals 
 model Meal {
