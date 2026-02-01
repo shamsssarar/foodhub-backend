@@ -107,7 +107,84 @@ const updateOrderStatusInDB = async (orderId: string, status: OrderStatus) => {
   return result;
 };
 
-// src/app/modules/Order/order.service.ts
+const updateStatus = async (orderId: string, newStatus: OrderStatus, user: any) => {
+  
+  // 1. ADMIN Logic
+  if (user.role === 'ADMIN') {
+    return await prisma.order.update({
+      where: { id: orderId },
+      data: { status: newStatus }
+    });
+  }
+
+  // 2. PROVIDER Logic
+  if (user.role === 'PROVIDER') {
+    const providerProfile = await prisma.providerProfile.findUnique({
+      where: { userId: user.userId }
+    });
+
+    if (!providerProfile) throw new Error("Provider profile not found");
+
+    const myCategory = providerProfile.cuisineType;
+
+    // A. Update ONLY this provider's items (Use AWAIT to ensure it finishes!)
+    await prisma.orderItem.updateMany({
+      where: {
+        orderId: orderId,
+        meal: {
+          category: {
+            name: myCategory
+          }
+        }
+      },
+      data: { status: newStatus }
+    });
+
+    console.log(`🔹 Provider (${myCategory}) updated items to ${newStatus}`);
+
+    // --- B. SYNC PARENT ORDER STATUS ---
+    
+    // Fetch the Order and ALL its items fresh from the DB
+    const orderCheck = await prisma.order.findUnique({
+      where: { id: orderId },
+      include: { orderItems: true }
+    });
+
+    if (orderCheck) {
+      // 1. Check status of ALL items in the order
+      const allItems = orderCheck.orderItems;
+      const allDelivered = allItems.every(item => item.status === 'DELIVERED');
+      const anyActive = allItems.some(item => item.status === 'IN_PROGRESS' || item.status === 'DELIVERED');
+
+      console.log("🔍 SYNC CHECK:", {
+        orderId,
+        totalItems: allItems.length,
+        statuses: allItems.map(i => i.status),
+        allDelivered
+      });
+
+      let finalStatus = orderCheck.status;
+
+      // 2. DECISION LOGIC
+      if (allDelivered) {
+        finalStatus = 'DELIVERED'; 
+      } else if (anyActive && orderCheck.status === 'PENDING') {
+        finalStatus = 'IN_PROGRESS'; 
+      }
+
+      if (finalStatus !== orderCheck.status) {
+        await prisma.order.update({
+          where: { id: orderId },
+          data: { status: finalStatus }
+        });
+        console.log(`✅ Main Order Updated to: ${finalStatus}`);
+      }
+    }
+
+    return { message: "Status updated and synced" };
+  }
+};
+
 const getOrdersByUserIdFromDB = async (userId: string) => {
   return await prisma.order.findMany({
     where: {
@@ -115,7 +192,11 @@ const getOrdersByUserIdFromDB = async (userId: string) => {
     },
     include: {
       user: true,
-      orderItems: true,
+      orderItems: {
+        include: {
+          meal: true,
+        },
+      },
     },
     orderBy: {
       createdAt: "desc",
@@ -124,8 +205,6 @@ const getOrdersByUserIdFromDB = async (userId: string) => {
 };
 
 const getOrdersForProvider = async (user: any) => {
-  // 1. Find the Provider's Profile to see what Category they own
-  console.log("🔹 PROVIDER DEBUG - User Object:", user);
   const providerId = user.userId;
   if (!providerId) {
     throw new Error("User ID is missing/undefined in the request token.");
@@ -139,9 +218,8 @@ const getOrdersForProvider = async (user: any) => {
     throw new Error("Provider profile not found");
   }
 
-  const myCategoryName = providerProfile.cuisineType; // e.g., "Burger"
+  const myCategoryName = providerProfile.cuisineType;
 
-  // 2. Find ALL Orders that have at least one item from this Category
   const orders = await prisma.order.findMany({
     where: {
       orderItems: {
@@ -156,7 +234,6 @@ const getOrdersForProvider = async (user: any) => {
     },
     include: {
       user: {
-        // The Customer details
         select: {
           name: true,
           email: true,
@@ -177,14 +254,12 @@ const getOrdersForProvider = async (user: any) => {
     },
   });
 
-  // 3. THE MAGIC FILTER: Strip out items that don't belong to this provider
   const formattedOrders = orders.map((order) => {
-    // Filter the items array to keep ONLY "Burger" items (for the Burger guy)
+
     const myItems = order.orderItems.filter(
       (item) => item.meal.category.name === myCategoryName,
     );
 
-    // Recalculate the total money for JUST these items
     const myRevenue = myItems.reduce(
       (total, item) => total + item.price * item.quantity,
       0,
@@ -195,8 +270,8 @@ const getOrdersForProvider = async (user: any) => {
       customerName: order.user.name,
       status: order.status,
       createdAt: order.createdAt,
-      items: myItems, // <--- Only sending YOUR items
-      totalRevenue: myRevenue, // <--- Only showing YOUR money
+      items: myItems,
+      totalRevenue: myRevenue,
     };
   });
 
@@ -214,6 +289,7 @@ export const OrderService = {
   createOrderIntoDB,
   getAllOrdersFromDB,
   updateOrderStatusInDB,
+  updateStatus,
   getOrdersByUserIdFromDB,
   getOrdersForProvider,
   deleteOrder,

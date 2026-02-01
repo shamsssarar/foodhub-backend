@@ -42,11 +42,13 @@ const getAllOrders = async (req: Request, res: Response) => {
 const updateStatus = async (req: Request, res: Response) => {
   try {
     const { orderId } = req.params;
-    const { status } = req.body; // We will send { "status": "DELIVERED" }
+    const { status } = req.body;
+    const user = req.user; // We will send { "status": "DELIVERED" }
 
-    const result = await OrderService.updateOrderStatusInDB(
+    const result = await OrderService.updateStatus(
       orderId as string,
       status,
+      user,
     );
     res.status(200).json({
       success: true,
@@ -80,8 +82,6 @@ const getOrdersByUserId = async (req: Request, res: Response) => {
       .json({ success: false, message: "Error fetching orders", error: err });
   }
 };
-
-
 
 const getMyProviderOrders = async (req: Request, res: Response) => {
   try {
