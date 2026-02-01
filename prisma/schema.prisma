@@ -48,9 +48,9 @@ enum UserRole {
 // 2. Provider Profile (Restaurant specific info)
 model ProviderProfile {
   id             String @id @default(uuid())
-  restaurantName String
+  restaurantName String?
   cuisineType    String
-  address        String
+  address        String?
   phone          String
   userId         String @unique
   category       Category @relation(fields: [cuisineType], references: [name])
@@ -66,8 +66,10 @@ model ProviderProfile {
 // 3. Categories (Cuisine types like "Italian", "Desi")
 model Category {
   id        String   @id @default(uuid())
-  name      String
+  name      String   @unique
+  description String?
   meals     Meal[]   // Relation to Meals
+  providerProfiles ProviderProfile[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

@@ -81,9 +81,48 @@ const getOrdersByUserId = async (req: Request, res: Response) => {
   }
 };
 
+
+
+const getMyProviderOrders = async (req: Request, res: Response) => {
+  try {
+    const user = req.user; // Assuming your auth middleware puts the user here
+    const result = await OrderService.getOrdersForProvider(user);
+
+    res.status(200).json({
+      success: true,
+      statusCode: 200,
+      message: "Provider orders retrieved successfully",
+      data: result,
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      message: error.message || "Something went wrong",
+    });
+  }
+};
+
+const deleteOrder = async (req: Request, res: Response) => {
+  try {
+    const result = await OrderService.deleteOrder(req.params.id as string);
+    res.status(200).json({
+      success: true,
+      message: "Order deleted successfully!",
+      data: result,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Something Went Wrong",
+      error: error,
+    });
+  }
+};
 export const OrderController = {
   createOrder,
   getAllOrders,
   updateStatus,
   getOrdersByUserId,
+  getMyProviderOrders,
+  deleteOrder,
 };

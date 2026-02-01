@@ -123,9 +123,98 @@ const getOrdersByUserIdFromDB = async (userId: string) => {
   });
 };
 
+const getOrdersForProvider = async (user: any) => {
+  // 1. Find the Provider's Profile to see what Category they own
+  console.log("🔹 PROVIDER DEBUG - User Object:", user);
+  const providerId = user.userId;
+  if (!providerId) {
+    throw new Error("User ID is missing/undefined in the request token.");
+  }
+  const providerProfile = await prisma.providerProfile.findUnique({
+    where: { userId: providerId },
+    include: { category: true },
+  });
+
+  if (!providerProfile) {
+    throw new Error("Provider profile not found");
+  }
+
+  const myCategoryName = providerProfile.cuisineType; // e.g., "Burger"
+
+  // 2. Find ALL Orders that have at least one item from this Category
+  const orders = await prisma.order.findMany({
+    where: {
+      orderItems: {
+        some: {
+          meal: {
+            category: {
+              name: myCategoryName,
+            },
+          },
+        },
+      },
+    },
+    include: {
+      user: {
+        // The Customer details
+        select: {
+          name: true,
+          email: true,
+        },
+      },
+      orderItems: {
+        include: {
+          meal: {
+            include: {
+              category: true,
+            },
+          },
+        },
+      },
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+
+  // 3. THE MAGIC FILTER: Strip out items that don't belong to this provider
+  const formattedOrders = orders.map((order) => {
+    // Filter the items array to keep ONLY "Burger" items (for the Burger guy)
+    const myItems = order.orderItems.filter(
+      (item) => item.meal.category.name === myCategoryName,
+    );
+
+    // Recalculate the total money for JUST these items
+    const myRevenue = myItems.reduce(
+      (total, item) => total + item.price * item.quantity,
+      0,
+    );
+
+    return {
+      orderId: order.id,
+      customerName: order.user.name,
+      status: order.status,
+      createdAt: order.createdAt,
+      items: myItems, // <--- Only sending YOUR items
+      totalRevenue: myRevenue, // <--- Only showing YOUR money
+    };
+  });
+
+  return formattedOrders;
+};
+
+const deleteOrder = async (id: string) => {
+  const result = await prisma.order.delete({
+    where: { id },
+  });
+  return result;
+};
+
 export const OrderService = {
   createOrderIntoDB,
   getAllOrdersFromDB,
   updateOrderStatusInDB,
   getOrdersByUserIdFromDB,
+  getOrdersForProvider,
+  deleteOrder,
 };

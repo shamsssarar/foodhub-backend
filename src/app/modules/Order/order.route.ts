@@ -2,6 +2,7 @@ import express from "express";
 import { OrderController } from "./order.controller";
 import { USER_ROLE } from "../User/user.constant";
 import auth from "../../middlewares/auth";
+import { UserRole } from "@prisma/client";
 
 const router = express.Router();
 
@@ -17,10 +18,19 @@ router.get(
   auth(USER_ROLE.CUSTOMER, USER_ROLE.ADMIN),
   OrderController.getOrdersByUserId,
 );
+
+router.get(
+  "/orders/provider-orders",
+  auth(USER_ROLE.PROVIDER),
+  OrderController.getMyProviderOrders,
+);
+
 router.patch(
   "/orders/:orderId/status",
   auth(USER_ROLE.ADMIN, USER_ROLE.PROVIDER),
   OrderController.updateStatus,
 );
+
+router.delete("/orders/:id", OrderController.deleteOrder);
 
 export const OrderRoutes = router;

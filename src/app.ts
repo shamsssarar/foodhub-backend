@@ -21,13 +21,16 @@ app.use(
 );
 
 // Application Routes
-app.use("/api", UserRoutes);
-app.use("/api", CategoryRoutes);
-app.use("/api", MealRoutes);
-app.use("/api", OrderRoutes);
-app.use("/api", ProfileRoutes);
-app.use("/api", ReviewRoutes);
-app.use("/api", AuthRoutes);
+app.use(
+  "/api",
+  UserRoutes,
+  CategoryRoutes,
+  MealRoutes,
+  OrderRoutes,
+  ProfileRoutes,
+  ReviewRoutes,
+  AuthRoutes,
+);
 app.use(globalErrorHandler);
 
 app.get("/", (req: Request, res: Response) => {
