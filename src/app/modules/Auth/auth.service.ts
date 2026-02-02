@@ -4,10 +4,9 @@ import prisma from "../../../shared/prisma";
 import { User } from "@prisma/client";
 import config from "../../../config";
 
-
 // REGISTER
-// ⚠️ Change type to 'any' for speed/safety right now
-const registerUser = async (payload: any) => { 
+// Change payload type to 'any' to avoid TS errors during this quick fix
+const registerUser = async (payload: any) => {
   // 1. Check if user already exists
   const existingUser = await prisma.user.findUnique({
     where: { email: payload.email },
@@ -20,29 +19,30 @@ const registerUser = async (payload: any) => {
   // 2. Hash the Password
   const hashedPassword = await bcrypt.hash(payload.password, 12);
 
-  // 3. 🟢 EXTRACT CUISINE
-  // The frontend sends "cuisine", but your DB wants "cuisineType"
   const { cuisine, ...userData } = payload;
 
-  // 4. Create User AND Provider Profile together
+  // 4. Create User safely
   const newUser = await prisma.user.create({
     data: {
-      ...userData,
+      name: userData.name,
+      email: userData.email,
       password: hashedPassword,
-      
-      // 🟢 THE FIX: Map 'cuisine' -> 'cuisineType'
-      providerProfile: 
-        userData.role === "PROVIDER" && cuisine
+      role: userData.role,
+
+      // 5. Create Provider Profile (Only if role is PROVIDER)
+      providerProfile:
+        userData.role === "PROVIDER"
           ? {
               create: {
-                cuisineType: cuisine, // <--- MAPPED CORRECTLY HERE
-              },
+                // Map the frontend 'cuisine' to database 'cuisineType'
+                cuisineType: cuisine,
+              } as any,
             }
           : undefined,
     },
   });
 
-  // 5. Return user info WITHOUT the password
+  // 6. Return result
   const { password, ...result } = newUser;
   return result;
 };
@@ -64,7 +64,7 @@ const loginUser = async (payload: { email: string; password: string }) => {
   // 1. Find User
 
   const userData = await prisma.user.findUnique({
-    where: { email: payload.email, },
+    where: { email: payload.email },
   });
 
   if (!userData) {

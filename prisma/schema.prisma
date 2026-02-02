@@ -53,7 +53,8 @@ model ProviderProfile {
   address        String?
   phone          String
   userId         String @unique
-  category       Category @relation(fields: [cuisineType], references: [name])
+  category       Category? @relation(fields: [cuisineType], references: [name])
+  categoryId String?
   user           User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
