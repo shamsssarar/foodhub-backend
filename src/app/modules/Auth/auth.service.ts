@@ -6,7 +6,8 @@ import config from "../../../config";
 
 
 // REGISTER
-const registerUser = async (payload: User) => {
+// ⚠️ Change type to 'any' for speed/safety right now
+const registerUser = async (payload: any) => { 
   // 1. Check if user already exists
   const existingUser = await prisma.user.findUnique({
     where: { email: payload.email },
@@ -16,18 +17,32 @@ const registerUser = async (payload: User) => {
     throw new Error("Email already exists!");
   }
 
-  // 2. Hash the Password (Security)
+  // 2. Hash the Password
   const hashedPassword = await bcrypt.hash(payload.password, 12);
 
-  // 3. Create User
+  // 3. 🟢 EXTRACT CUISINE
+  // The frontend sends "cuisine", but your DB wants "cuisineType"
+  const { cuisine, ...userData } = payload;
+
+  // 4. Create User AND Provider Profile together
   const newUser = await prisma.user.create({
     data: {
-      ...payload,
+      ...userData,
       password: hashedPassword,
+      
+      // 🟢 THE FIX: Map 'cuisine' -> 'cuisineType'
+      providerProfile: 
+        userData.role === "PROVIDER" && cuisine
+          ? {
+              create: {
+                cuisineType: cuisine, // <--- MAPPED CORRECTLY HERE
+              },
+            }
+          : undefined,
     },
   });
 
-  // 4. Return user info WITHOUT the password
+  // 5. Return user info WITHOUT the password
   const { password, ...result } = newUser;
   return result;
 };
