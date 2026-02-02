@@ -35,7 +35,7 @@ const registerUser = async (payload: any) => {
           ? {
               create: {
                 // Map the frontend 'cuisine' to database 'cuisineType'
-                cuisineType: cuisine,
+                cuisineType: cuisine || "general",
               } as any,
             }
           : undefined,
