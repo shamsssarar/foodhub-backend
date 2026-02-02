@@ -144,5 +144,5 @@ This API is optimized for serverless deployment on Vercel.
 
 ## 👥 Contributors
 
-* **[Your Name]** - *Lead Backend Architect* - [GitHub Profile](https://github.com/shamsssarar)
+* **[Shams Sarar]** - *Lead Backend Architect* - [GitHub Profile](https://github.com/shamsssarar)
 
