@@ -30,6 +30,20 @@ const updateProviderStatus = async (
   return result;
 };
 
+const getMyProviderProfile = async (userId: string) => {
+  const result = await prisma.providerProfile.findUnique({
+    where: {
+      userId: userId, // Find profile where userId matches the token
+    },
+  });
+  
+  if (!result) {
+    throw new Error("Profile not found");
+  }
+  
+  return result;
+};
+
 const deleteUser = async (id: string) => {
   const result = await prisma.user.delete({
     where: { id },
@@ -41,5 +55,6 @@ export const UserService = {
   createUserIntoDB,
   getAllUsersFromDB,
   updateProviderStatus,
+  getMyProviderProfile,
   deleteUser,
 };

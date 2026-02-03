@@ -13,4 +13,9 @@ router.patch(
   auth(USER_ROLE.ADMIN), 
   UserController.updateProviderStatus,
 );
+router.get(
+  "/provider-profile",
+  auth(USER_ROLE.PROVIDER), // Only Providers can call this
+  UserController.getMyProfile
+);
 export const UserRoutes = router;

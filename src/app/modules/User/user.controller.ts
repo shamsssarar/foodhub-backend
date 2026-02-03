@@ -57,6 +57,31 @@ const updateProviderStatus = async (req: Request, res: Response) => {
   }
 };
 
+const getMyProfile = async (req: Request, res: Response) => {
+  try {
+    // 1. Get the User ID from the token (attached by auth middleware)
+    const userId = (req as any).user.id; 
+
+    // 2. Call the service
+    const result = await UserService.getMyProviderProfile(userId);
+
+    // 3. Send Success Response
+    res.status(200).json({
+      success: true,
+      message: "Provider profile retrieved successfully",
+      data: result,
+    });
+
+  } catch (err: any) {
+    // 4. Handle Errors
+    res.status(500).json({
+      success: false,
+      message: err.message || "Failed to retrieve profile",
+      error: err,
+    });
+  }
+};
+
 const deleteUser = async (req: Request, res: Response) => {
   try {
     const result = await UserService.deleteUser(req.params.id as string);
@@ -78,5 +103,6 @@ export const UserController = {
   createUser,
   getAllUsers,
   updateProviderStatus,
+  getMyProfile,
   deleteUser,
 };
