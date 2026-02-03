@@ -8,7 +8,7 @@ const createMealIntoDB = async (data: Meal) => {
   return result;
 };
 
-const getAllMealsFromDB = async (filters: any = {}) => {
+const getAllMealsFromDB = async () => {
   const approvedProviders = await prisma.providerProfile.findMany({
     where: { status: "APPROVED" },
     select: { cuisineType: true },
@@ -25,7 +25,6 @@ const getAllMealsFromDB = async (filters: any = {}) => {
     },
     include: {
       category: true,
-      reviews: true,
     },
   });
   return result;
