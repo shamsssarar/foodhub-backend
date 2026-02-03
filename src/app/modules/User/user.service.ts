@@ -1,4 +1,4 @@
-import { User } from "@prisma/client";
+import { ProviderStatus, User } from "@prisma/client";
 import prisma from "../../../shared/prisma";
 import { any, string } from "zod";
 
@@ -19,6 +19,17 @@ const getAllUsersFromDB = async () => {
   return result;
 };
 
+const updateProviderStatus = async (
+  providerId: string,
+  status: ProviderStatus,
+) => {
+  const result = await prisma.providerProfile.update({
+    where: { userId: providerId },
+    data: { status },
+  });
+  return result;
+};
+
 const deleteUser = async (id: string) => {
   const result = await prisma.user.delete({
     where: { id },
@@ -29,5 +40,6 @@ const deleteUser = async (id: string) => {
 export const UserService = {
   createUserIntoDB,
   getAllUsersFromDB,
+  updateProviderStatus,
   deleteUser,
 };

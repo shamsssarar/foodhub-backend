@@ -35,6 +35,28 @@ const getAllUsers = async (req: Request, res: Response) => {
   }
 };
 
+const updateProviderStatus = async (req: Request, res: Response) => {
+  try {
+    const { providerId } = req.params;
+    const { status } = req.body;
+    const result = await UserService.updateProviderStatus(
+      providerId as string,
+      status,
+    );
+    res.status(200).json({
+      success: true,
+      message: "ProviderUser Updated successfully!",
+      data: result,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Something Went Wrong",
+      error: error,
+    });
+  }
+};
+
 const deleteUser = async (req: Request, res: Response) => {
   try {
     const result = await UserService.deleteUser(req.params.id as string);
@@ -55,5 +77,6 @@ const deleteUser = async (req: Request, res: Response) => {
 export const UserController = {
   createUser,
   getAllUsers,
+  updateProviderStatus,
   deleteUser,
 };

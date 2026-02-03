@@ -45,6 +45,12 @@ enum UserRole {
   ADMIN
 }
 
+enum ProviderStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 // 2. Provider Profile (Restaurant specific info)
 model ProviderProfile {
   id             String @id @default(uuid())
@@ -53,6 +59,7 @@ model ProviderProfile {
   address        String?
   phone          String
   userId         String @unique
+  status         ProviderStatus @default(PENDING)
   category       Category? @relation(fields: [cuisineType], references: [name])
   categoryId String?
   user           User   @relation(fields: [userId], references: [id], onDelete: Cascade)

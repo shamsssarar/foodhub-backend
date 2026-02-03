@@ -8,10 +8,24 @@ const createMealIntoDB = async (data: Meal) => {
   return result;
 };
 
-const getAllMealsFromDB = async () => {
+const getAllMealsFromDB = async (filters: any = {}) => {
+  const approvedProviders = await prisma.providerProfile.findMany({
+    where: { status: "APPROVED" },
+    select: { cuisineType: true },
+  });
+  const approvedCuisines = approvedProviders
+    .map((p) => p.cuisineType)
+    .filter((type) => type !== null) as string[];
+
   const result = await prisma.meal.findMany({
+    where: {
+      category: {
+        name: { in: approvedCuisines },
+      },
+    },
     include: {
-      category: true, // This is magic: It will fetch the Category details too!
+      category: true,
+      reviews: true,
     },
   });
   return result;
