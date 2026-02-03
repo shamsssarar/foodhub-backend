@@ -16,6 +16,21 @@ const registerUser = async (payload: any) => {
     throw new Error("Email already exists!");
   }
 
+  if (payload.role === "PROVIDER" && payload.cuisine) {
+    const existingProvider = await prisma.providerProfile.findFirst({
+      where: {
+        cuisineType: payload.cuisine, // Checks if 'Burger' is already taken
+      },
+    });
+
+    if (existingProvider) {
+      // 🛑 STOP HERE and return the specific error you wanted
+      throw new Error(
+        `A Provider already exists with this cuisineType '${payload.cuisine}'. Try a different one.`
+      );
+    }
+  }
+
   // 2. Hash the Password
   const hashedPassword = await bcrypt.hash(payload.password, 12);
 
@@ -34,8 +49,8 @@ const registerUser = async (payload: any) => {
         userData.role === "PROVIDER"
           ? {
               create: {
-                // Map the frontend 'cuisine' to database 'cuisineType'
                 cuisineType: cuisine || "general",
+                phone: "",
               } as any,
             }
           : undefined,

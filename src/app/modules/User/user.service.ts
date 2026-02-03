@@ -10,7 +10,12 @@ const createUserIntoDB = async (data: User) => {
 };
 
 const getAllUsersFromDB = async () => {
-  const result = await prisma.user.findMany();
+  const result = await prisma.user.findMany({
+    include: {
+      providerProfile: true,
+    },
+  });
+
   return result;
 };
 
