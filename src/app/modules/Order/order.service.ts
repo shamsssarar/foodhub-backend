@@ -3,6 +3,7 @@ import prisma from "../../../shared/prisma";
 import ApiError from "../../../errors/ApiError"; // Fixed import (No curly braces)
 import { any } from "zod";
 import { error } from "node:console";
+import { tr } from "zod/v4/locales";
 
 const createOrderIntoDB = async (
   userId: string,
@@ -107,20 +108,23 @@ const updateOrderStatusInDB = async (orderId: string, status: OrderStatus) => {
   return result;
 };
 
-const updateStatus = async (orderId: string, newStatus: OrderStatus, user: any) => {
-  
+const updateStatus = async (
+  orderId: string,
+  newStatus: OrderStatus,
+  user: any,
+) => {
   // 1. ADMIN Logic
-  if (user.role === 'ADMIN') {
+  if (user.role === "ADMIN") {
     return await prisma.order.update({
       where: { id: orderId },
-      data: { status: newStatus }
+      data: { status: newStatus },
     });
   }
 
   // 2. PROVIDER Logic
-  if (user.role === 'PROVIDER') {
+  if (user.role === "PROVIDER") {
     const providerProfile = await prisma.providerProfile.findUnique({
-      where: { userId: user.userId }
+      where: { userId: user.userId },
     });
 
     if (!providerProfile) throw new Error("Provider profile not found");
@@ -133,49 +137,53 @@ const updateStatus = async (orderId: string, newStatus: OrderStatus, user: any) 
         orderId: orderId,
         meal: {
           category: {
-            name: myCategory
-          }
-        }
+            name: myCategory,
+          },
+        },
       },
-      data: { status: newStatus }
+      data: { status: newStatus },
     });
 
     console.log(`🔹 Provider (${myCategory}) updated items to ${newStatus}`);
 
     // --- B. SYNC PARENT ORDER STATUS ---
-    
+
     // Fetch the Order and ALL its items fresh from the DB
     const orderCheck = await prisma.order.findUnique({
       where: { id: orderId },
-      include: { orderItems: true }
+      include: { orderItems: true },
     });
 
     if (orderCheck) {
       // 1. Check status of ALL items in the order
       const allItems = orderCheck.orderItems;
-      const allDelivered = allItems.every(item => item.status === 'DELIVERED');
-      const anyActive = allItems.some(item => item.status === 'IN_PROGRESS' || item.status === 'DELIVERED');
+      const allDelivered = allItems.every(
+        (item) => item.status === "DELIVERED",
+      );
+      const anyActive = allItems.some(
+        (item) => item.status === "IN_PROGRESS" || item.status === "DELIVERED",
+      );
 
       console.log("🔍 SYNC CHECK:", {
         orderId,
         totalItems: allItems.length,
-        statuses: allItems.map(i => i.status),
-        allDelivered
+        statuses: allItems.map((i) => i.status),
+        allDelivered,
       });
 
       let finalStatus = orderCheck.status;
 
       // 2. DECISION LOGIC
       if (allDelivered) {
-        finalStatus = 'DELIVERED'; 
-      } else if (anyActive && orderCheck.status === 'PENDING') {
-        finalStatus = 'IN_PROGRESS'; 
+        finalStatus = "DELIVERED";
+      } else if (anyActive && orderCheck.status === "PENDING") {
+        finalStatus = "IN_PROGRESS";
       }
 
       if (finalStatus !== orderCheck.status) {
         await prisma.order.update({
           where: { id: orderId },
-          data: { status: finalStatus }
+          data: { status: finalStatus },
         });
         console.log(`✅ Main Order Updated to: ${finalStatus}`);
       }
@@ -187,20 +195,30 @@ const updateStatus = async (orderId: string, newStatus: OrderStatus, user: any) 
 
 const getOrdersByUserIdFromDB = async (userId: string) => {
   return await prisma.order.findMany({
-    where: {
-      userId: userId, // Filter strictly by the provided ID
-    },
+   where: { userId: userId },
     include: {
       user: true,
+      
+      // 🟢 1. FETCH REVIEWS HERE (Strictly linked to this Order)
+      reviews: {
+        select: {
+          id: true,
+          mealId: true, // We need this to know WHICH item was reviewed
+          rating: true
+        }
+      },
+
       orderItems: {
         include: {
-          meal: true,
+          meal: {
+            include: {
+              category: true,
+            },
+          },
         },
       },
     },
-    orderBy: {
-      createdAt: "desc",
-    },
+    orderBy: { createdAt: "desc" },
   });
 };
 
@@ -224,19 +242,20 @@ const getOrdersForProvider = async (user: any) => {
     where: {
       orderItems: {
         some: {
-          meal: {
-            category: {
-              name: myCategoryName,
-            },
-          },
+          meal: { category: { name: myCategoryName } },
         },
       },
     },
     include: {
       user: {
+        select: { name: true, email: true },
+      },
+      reviews: {
         select: {
-          name: true,
-          email: true,
+          rating: true,
+          comment: true,
+          userId: true,
+          mealId: true, 
         },
       },
       orderItems: {
@@ -249,13 +268,48 @@ const getOrdersForProvider = async (user: any) => {
         },
       },
     },
-    orderBy: {
-      createdAt: "desc",
-    },
+    orderBy: { createdAt: "desc" },
   });
 
-  const formattedOrders = orders.map((order) => {
+  // const orderItems = await prisma.orderItem.findMany({
+  //   where: {
+  //     meal: { providerId: providerId },
+  //   },
+  //   include: {
+  //     order: {
+  //       select: {
+  //         id: true,
+  //         userId: true,
+  //         user: {
+  //           select: {
+  //             name: true,
+  //           },
+  //         },
+  //         createdAt: true,
+  //       },
+  //     },
+  //     meal: {
+  //       select: {
+  //         name: true,
+  //         price: true,
+  //         category: {
+  //           select: {
+  //             name: true,
+  //           },
+  //         },
+  //         reviews: {
+  //           select: {
+  //             rating: true,
+  //             comment: true,
+  //             userId: true,
+  //           },
+  //         },
+  //       },
+  //     },
+  //   },
+  // });
 
+  const formattedOrders = orders.map((order) => {
     const myItems = order.orderItems.filter(
       (item) => item.meal.category.name === myCategoryName,
     );
@@ -265,12 +319,27 @@ const getOrdersForProvider = async (user: any) => {
       0,
     );
 
+    const itemsWithReviews = myItems.map((item) => {
+      // Find the review from the ORDER list that matches this MEAL
+      const specificReview = order.reviews.find(r => r.mealId === item.meal.id);
+      
+      return {
+        ...item,
+        meal: {
+          ...item.meal,
+          // We manually attach ONLY the specific review for this order
+          reviews: specificReview ? [specificReview] : [] 
+        }
+      };
+    });
+
     return {
       orderId: order.id,
+      userId: order.userId, // 🟢 ADD THIS LINE!
       customerName: order.user.name,
       status: order.status,
       createdAt: order.createdAt,
-      items: myItems,
+      items: itemsWithReviews,
       totalRevenue: myRevenue,
     };
   });

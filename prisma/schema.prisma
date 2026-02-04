@@ -62,6 +62,7 @@ model ProviderProfile {
   status         ProviderStatus @default(PENDING)
   category       Category? @relation(fields: [cuisineType], references: [name])
   categoryId String?
+  meals          Meal[]
   user           User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -98,6 +99,8 @@ model Meal {
   category    Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   
   reviews     Review[]
+  providerId  String
+  provider    ProviderProfile @relation(fields: [providerId], references: [id], onDelete: Cascade)
 
   orderItems OrderItem[]
   
@@ -115,6 +118,7 @@ model Order {
   status     OrderStatus @default(PENDING)
   totalPrice Float
   orderItems OrderItem[]
+  reviews Review[]
   createdAt  DateTime    @default(now())
   updatedAt  DateTime    @updatedAt
 
@@ -156,6 +160,9 @@ model Review {
   
   mealId    String
   meal      Meal     @relation(fields: [mealId], references: [id], onDelete: Cascade)
+
+  orderId   String
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

@@ -14,11 +14,15 @@ declare global {
 const auth = (...requiredRoles: string[]) => {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const token = req.headers.authorization;
+      const tokenHeader = req.headers.authorization;
 
-      if (!token) {
+      if (!tokenHeader) {
         throw new Error("You are not authorized!");
       }
+
+      const token = tokenHeader.startsWith("Bearer ")
+        ? tokenHeader.split(" ")[1]
+        : tokenHeader;
 
       // Verify Token
       const verifiedUser = jwt.verify(

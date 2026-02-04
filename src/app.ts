@@ -5,9 +5,10 @@ import { CategoryRoutes } from "./app/modules/Category/category.route";
 import { MealRoutes } from "./app/modules/Meal/meal.route";
 import { OrderRoutes } from "./app/modules/Order/order.route";
 import { ProfileRoutes } from "./app/modules/ProviderProfile/profile.route";
-import { ReviewRoutes } from "./app/modules/Service/review.route";
+
 import { AuthRoutes } from "./app/modules/Auth/auth.route";
 import globalErrorHandler from "./app/middlewares/globalErrorHandler";
+import { ReviewRoutes } from "./app/modules/Review/review.route";
 
 const app: Application = express();
 
@@ -15,7 +16,7 @@ const app: Application = express();
 app.use(express.json());
 app.use(
   cors({
-    origin: ["https://foodhub-client-mu.vercel.app","http://localhost:3000"],
+    origin: ["https://foodhub-client-mu.vercel.app", "http://localhost:3000"],
     credentials: true,
   }),
 );
