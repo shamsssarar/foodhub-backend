@@ -106,14 +106,40 @@ const addItemToOrder = async (req: Request, res: Response) => {
   try {
     const { orderId, mealId } = req.body;
     const result = await OrderService.addItemToOrder(orderId, mealId);
-    
+
     res.status(200).json({
       success: true,
       message: "Item added to order successfully!",
       data: result,
     });
   } catch (err) {
-    res.status(500).json({ success: false, message: "Failed to add item", error: err });
+    res
+      .status(500)
+      .json({ success: false, message: "Failed to add item", error: err });
+  }
+};
+
+const removeItemFromOrder = async (req: Request, res: Response) => {
+  try {
+    const { orderId, mealId } = req.body;
+
+    // 1. Call the service to remove the item
+    const result = await OrderService.removeItemFromOrder(orderId, mealId);
+
+    // 2. Send Success Response
+    res.status(200).json({
+      success: true,
+      message: "Item removed successfully",
+      data: result,
+    });
+  } catch (error: any) {
+    // 3. Handle Errors
+    console.error("Error removing item:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message || "Failed to remove item",
+      error: error,
+    });
   }
 };
 
@@ -133,6 +159,7 @@ const deleteOrder = async (req: Request, res: Response) => {
     });
   }
 };
+
 export const OrderController = {
   createOrder,
   getAllOrders,
@@ -140,5 +167,6 @@ export const OrderController = {
   getOrdersByUserId,
   getMyProviderOrders,
   addItemToOrder,
+  removeItemFromOrder,
   deleteOrder,
 };

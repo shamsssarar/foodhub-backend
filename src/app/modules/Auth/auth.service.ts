@@ -26,7 +26,7 @@ const registerUser = async (payload: any) => {
     if (existingProvider) {
       // 🛑 STOP HERE and return the specific error you wanted
       throw new Error(
-        `A Provider already exists with this cuisineType '${payload.cuisine}'. Try a different one.`
+        `A Provider already exists with this cuisineType '${payload.cuisine}'. Try a different one.`,
       );
     }
   }
@@ -34,24 +34,50 @@ const registerUser = async (payload: any) => {
   // 2. Hash the Password
   const hashedPassword = await bcrypt.hash(payload.password, 12);
 
-  const { cuisine, ...userData } = payload;
+  let categoryId = null;
 
-  // 4. Create User safely
+  if (payload.role === "PROVIDER" && payload.cuisine) {
+    const cleanName = payload.cuisine.trim(); // Remove invisible spaces
+
+    // A. Find the Category ID (Case Insensitive)
+    let category = await prisma.category.findFirst({
+      where: {
+        name: { equals: cleanName, mode: "insensitive" },
+      },
+    });
+
+    // B. If not found, CREATE IT automatically
+    if (!category) {
+      console.log(`Creating new category: ${cleanName}`);
+      category = await prisma.category.create({
+        data: { name: cleanName },
+      });
+    }
+
+    categoryId = category.id; // Now we have the ID!
+  }
+
+  // 5. Create User + Link Profile Safely
   const newUser = await prisma.user.create({
     data: {
-      name: userData.name,
-      email: userData.email,
+      name: payload.name,
+      email: payload.email,
       password: hashedPassword,
-      role: userData.role,
+      role: payload.role,
 
-      // 5. Create Provider Profile (Only if role is PROVIDER)
+      // Create Profile Nested
       providerProfile:
-        userData.role === "PROVIDER"
+        payload.role === "PROVIDER"
           ? {
               create: {
-                cuisineType: cuisine || "general",
-                phone: "",
-              } as any,
+                cuisineType: payload.cuisine || "general",
+                restaurantName: payload.name,
+                phone: "N/A", // Default value to prevent errors
+                address: "N/A",
+
+                // 🟢 LINK THE FOUND ID HERE
+                categoryId: categoryId,
+              },
             }
           : undefined,
     },

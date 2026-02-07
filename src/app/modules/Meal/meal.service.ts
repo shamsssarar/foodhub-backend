@@ -22,10 +22,10 @@ const createMealIntoDB = async (userId: string, payload: any) => {
       description: payload.description,
       price: Number(payload.price), // Ensure it's a number
       imageUrl: payload.imageUrl,
-      
+
       // 🟢 AUTOMATICALLY LINK THEM:
-      providerId: provider.id,      // Use the ID from the profile
-      categoryId: provider.categoryId // Use the Category from the profile
+      providerId: provider.id, // Use the ID from the profile
+      categoryId: provider.categoryId, // Use the Category from the profile
     },
   });
 
@@ -46,6 +46,7 @@ const getAllMealsFromDB = async () => {
       category: {
         name: { in: approvedCuisines },
       },
+      isDeleted: false,
     },
     include: {
       category: true,
@@ -54,7 +55,64 @@ const getAllMealsFromDB = async () => {
   return result;
 };
 
+const getMyMeals = async (userId: string) => {
+  // 1. Find who you are (Provider)
+  const provider = await prisma.providerProfile.findUnique({
+    where: { userId: userId },
+  });
+
+  if (!provider) {
+    throw new Error("Provider profile not found");
+  }
+
+  // 2. Find meals strictly linked to Provider ID
+  const result = await prisma.meal.findMany({
+    where: {
+      providerId: provider.id,
+      isDeleted: false,
+    },
+  });
+
+  return result;
+};
+
+const deleteMyMeal = async (mealId: string, userId: string) => {
+  // 1. Find the Provider Profile of the logged-in user
+  const provider = await prisma.providerProfile.findUnique({
+    where: { userId: userId },
+  });
+
+  if (!provider) {
+    throw new Error("Provider profile not found.");
+  }
+
+  // 2. Check if the meal exists AND belongs to this provider
+  // This prevents Provider A from deleting Provider B's food.
+  const existingMeal = await prisma.meal.findFirst({
+    where: {
+      id: mealId,
+      providerId: provider.id,
+    },
+  });
+
+  if (!existingMeal) {
+    throw new Error(
+      "Meal not found or you do not have permission to delete it.",
+    );
+  }
+
+  // 3. Delete the Meal
+  const result = await prisma.meal.update({
+    where: { id: mealId },
+    data: { isDeleted: true },
+  });
+
+  return result;
+};
+
 export const MealService = {
   createMealIntoDB,
   getAllMealsFromDB,
+  getMyMeals,
+  deleteMyMeal,
 };

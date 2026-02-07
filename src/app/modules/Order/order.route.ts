@@ -32,6 +32,12 @@ router.patch(
   OrderController.updateStatus,
 );
 
+router.patch(
+  "/orders/remove-item", 
+  auth(USER_ROLE.PROVIDER), 
+  OrderController.removeItemFromOrder
+);
+
 router.delete("/orders/:id", OrderController.deleteOrder);
 
 router.post(

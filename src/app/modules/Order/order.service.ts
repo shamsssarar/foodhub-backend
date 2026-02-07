@@ -385,6 +385,51 @@ const addItemToOrder = async (orderId: string, mealId: string) => {
   }
 };
 
+const removeItemFromOrder = async (orderId: string, mealId: string) => {
+  // 1. Find the existing item in the order
+  const existingItem = await prisma.orderItem.findFirst({
+    where: {
+      orderId: orderId,
+      mealId: mealId,
+    },
+  });
+
+  if (!existingItem) {
+    throw new Error("Item not found in this order");
+  }
+
+  // 2. Decrease Quantity or Delete
+  if (existingItem.quantity > 1) {
+    // Just decrease by 1
+    await prisma.orderItem.update({
+      where: { id: existingItem.id },
+      data: { quantity: { decrement: 1 } },
+    });
+  } else {
+    const totalItemsInOrder = await prisma.orderItem.count({
+      where: { orderId: orderId },
+    });
+    if (totalItemsInOrder === 1) {
+      throw new Error(
+        "Removing this item will cancel your order. Contact admin to cancel.",
+      );
+    }
+    await prisma.orderItem.delete({
+      where: { id: existingItem.id },
+    });
+  }
+
+  // 3. ⚠️ CRITICAL: Update the Order's Total Price
+  await prisma.order.update({
+    where: { id: orderId },
+    data: {
+      totalPrice: { decrement: existingItem.price },
+    },
+  });
+
+  return null;
+};
+
 const deleteOrder = async (id: string) => {
   const result = await prisma.order.delete({
     where: { id },
@@ -400,5 +445,6 @@ export const OrderService = {
   getOrdersByUserIdFromDB,
   getOrdersForProvider,
   addItemToOrder,
+  removeItemFromOrder,
   deleteOrder,
 };
