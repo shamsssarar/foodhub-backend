@@ -102,6 +102,21 @@ const getMyProviderOrders = async (req: Request, res: Response) => {
   }
 };
 
+const addItemToOrder = async (req: Request, res: Response) => {
+  try {
+    const { orderId, mealId } = req.body;
+    const result = await OrderService.addItemToOrder(orderId, mealId);
+    
+    res.status(200).json({
+      success: true,
+      message: "Item added to order successfully!",
+      data: result,
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Failed to add item", error: err });
+  }
+};
+
 const deleteOrder = async (req: Request, res: Response) => {
   try {
     const result = await OrderService.deleteOrder(req.params.id as string);
@@ -124,5 +139,6 @@ export const OrderController = {
   updateStatus,
   getOrdersByUserId,
   getMyProviderOrders,
+  addItemToOrder,
   deleteOrder,
 };

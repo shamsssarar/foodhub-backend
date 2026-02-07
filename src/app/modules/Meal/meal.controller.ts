@@ -3,7 +3,11 @@ import { MealService } from "./meal.service";
 
 const createMeal = async (req: Request, res: Response) => {
   try {
-    const result = await MealService.createMealIntoDB(req.body);
+
+    const userId = (req as any).user.userId;
+
+    const result = await MealService.createMealIntoDB(userId, req.body);
+
     res.status(200).json({
       success: true,
       message: "Food created successfully!",

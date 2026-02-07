@@ -195,17 +195,17 @@ const updateStatus = async (
 
 const getOrdersByUserIdFromDB = async (userId: string) => {
   return await prisma.order.findMany({
-   where: { userId: userId },
+    where: { userId: userId },
     include: {
       user: true,
-      
+
       // 🟢 1. FETCH REVIEWS HERE (Strictly linked to this Order)
       reviews: {
         select: {
           id: true,
           mealId: true, // We need this to know WHICH item was reviewed
-          rating: true
-        }
+          rating: true,
+        },
       },
 
       orderItems: {
@@ -255,7 +255,7 @@ const getOrdersForProvider = async (user: any) => {
           rating: true,
           comment: true,
           userId: true,
-          mealId: true, 
+          mealId: true,
         },
       },
       orderItems: {
@@ -321,15 +321,17 @@ const getOrdersForProvider = async (user: any) => {
 
     const itemsWithReviews = myItems.map((item) => {
       // Find the review from the ORDER list that matches this MEAL
-      const specificReview = order.reviews.find(r => r.mealId === item.meal.id);
-      
+      const specificReview = order.reviews.find(
+        (r) => r.mealId === item.meal.id,
+      );
+
       return {
         ...item,
         meal: {
           ...item.meal,
           // We manually attach ONLY the specific review for this order
-          reviews: specificReview ? [specificReview] : [] 
-        }
+          reviews: specificReview ? [specificReview] : [],
+        },
       };
     });
 
@@ -347,6 +349,42 @@ const getOrdersForProvider = async (user: any) => {
   return formattedOrders;
 };
 
+const addItemToOrder = async (orderId: string, mealId: string) => {
+  // 1. Get the Meal details (to get the correct price)
+  const meal = await prisma.meal.findUnique({
+    where: { id: mealId },
+  });
+
+  if (!meal) throw new Error("Meal not found");
+
+  // 2. Check if this item is ALREADY in the order
+  const existingItem = await prisma.orderItem.findFirst({
+    where: {
+      orderId: orderId,
+      mealId: mealId,
+    },
+  });
+
+  if (existingItem) {
+    // Option A: If it exists, just increase quantity by 1
+    return await prisma.orderItem.update({
+      where: { id: existingItem.id },
+      data: { quantity: { increment: 1 } },
+    });
+  } else {
+    // Option B: If it's new, create a new line item
+    return await prisma.orderItem.create({
+      data: {
+        orderId: orderId,
+        mealId: mealId,
+        quantity: 1,
+        price: meal.price, // 🟢 Use current menu price
+        status: "PENDING",
+      },
+    });
+  }
+};
+
 const deleteOrder = async (id: string) => {
   const result = await prisma.order.delete({
     where: { id },
@@ -361,5 +399,6 @@ export const OrderService = {
   updateStatus,
   getOrdersByUserIdFromDB,
   getOrdersForProvider,
+  addItemToOrder,
   deleteOrder,
 };
