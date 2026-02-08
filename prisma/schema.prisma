@@ -60,7 +60,7 @@ model ProviderProfile {
   phone          String
   userId         String @unique
   status         ProviderStatus @default(PENDING)
-  category       Category? @relation(fields: [cuisineType], references: [name])
+  category       Category?      @relation(fields: [categoryId], references: [id])
   categoryId String?
   meals          Meal[]
   user           User   @relation(fields: [userId], references: [id], onDelete: Cascade)

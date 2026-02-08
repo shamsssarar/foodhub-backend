@@ -1,4 +1,4 @@
-import { Request, Response } from "express";
+import { NextFunction, Request, Response } from "express";
 import { UserService } from "./user.service";
 
 const createUser = async (req: Request, res: Response) => {
@@ -102,6 +102,30 @@ const getMyProfile = async (req: Request, res: Response) => {
   }
 };
 
+const assignCategory = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const { userId } = req.params;
+    const { categoryId } = req.body;
+
+    const result = await UserService.assignCategoryToProvider(
+      userId as string,
+      categoryId,
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Category assigned successfully!",
+      data: result,
+    });
+  } catch (error) {
+    next(error); // Pass error to global handler
+  }
+};
+
 const deleteUser = async (req: Request, res: Response) => {
   try {
     const result = await UserService.deleteUser(req.params.id as string);
@@ -124,5 +148,6 @@ export const UserController = {
   getAllUsers,
   updateProviderStatus,
   getMyProfile,
+  assignCategory,
   deleteUser,
 };

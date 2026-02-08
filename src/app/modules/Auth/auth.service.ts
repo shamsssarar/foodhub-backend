@@ -16,48 +16,28 @@ const registerUser = async (payload: any) => {
     throw new Error("Email already exists!");
   }
 
+  // 2. Check if a provider is already using this cuisine name (Optional - you can keep or remove this)
+  // If you want multiple providers to request "Burger", you should REMOVE this check.
+  // If you want "Burger" to be unique to one person forever, keep it. 
+  // (Usually, for requests, you might want to allow duplicates until Admin assigns them).
   if (payload.role === "PROVIDER" && payload.cuisine) {
     const existingProvider = await prisma.providerProfile.findFirst({
       where: {
-        cuisineType: payload.cuisine, // Checks if 'Burger' is already taken
+        cuisineType: payload.cuisine,
       },
     });
 
     if (existingProvider) {
-      // 🛑 STOP HERE and return the specific error you wanted
       throw new Error(
-        `A Provider already exists with this cuisineType '${payload.cuisine}'. Try a different one.`,
+        `A Provider already exists with this cuisine request '${payload.cuisine}'. Try a different one.`
       );
     }
   }
 
-  // 2. Hash the Password
+  // 3. Hash the Password
   const hashedPassword = await bcrypt.hash(payload.password, 12);
 
-  let categoryId = null;
-
-  if (payload.role === "PROVIDER" && payload.cuisine) {
-    const cleanName = payload.cuisine.trim(); // Remove invisible spaces
-
-    // A. Find the Category ID (Case Insensitive)
-    let category = await prisma.category.findFirst({
-      where: {
-        name: { equals: cleanName, mode: "insensitive" },
-      },
-    });
-
-    // B. If not found, CREATE IT automatically
-    if (!category) {
-      console.log(`Creating new category: ${cleanName}`);
-      category = await prisma.category.create({
-        data: { name: cleanName },
-      });
-    }
-
-    categoryId = category.id; // Now we have the ID!
-  }
-
-  // 5. Create User + Link Profile Safely
+  // 4. Create User + Pending Profile
   const newUser = await prisma.user.create({
     data: {
       name: payload.name,
@@ -65,25 +45,25 @@ const registerUser = async (payload: any) => {
       password: hashedPassword,
       role: payload.role,
 
-      // Create Profile Nested
+      // Create Profile Nested (Only if role is PROVIDER)
       providerProfile:
         payload.role === "PROVIDER"
           ? {
               create: {
-                cuisineType: payload.cuisine || "general",
+                // 🟢 SAVE THE REQUEST TEXT
+                cuisineType: payload.cuisine, 
                 restaurantName: payload.name,
-                phone: "N/A", // Default value to prevent errors
+                phone: "N/A", 
                 address: "N/A",
-
-                // 🟢 LINK THE FOUND ID HERE
-                categoryId: categoryId,
+                status: "PENDING", 
+                categoryId: null, 
               },
             }
           : undefined,
     },
   });
 
-  // 6. Return result
+  // 5. Return result
   const { password, ...result } = newUser;
   return result;
 };

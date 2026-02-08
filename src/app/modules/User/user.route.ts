@@ -13,6 +13,11 @@ router.patch(
   auth(USER_ROLE.ADMIN), 
   UserController.updateProviderStatus,
 );
+router.patch(
+  "/users/:userId/assign-category",
+  auth(USER_ROLE.ADMIN), // Only Admin can do this
+  UserController.assignCategory
+);
 router.get(
   "/provider-profile",
   auth(USER_ROLE.PROVIDER), // Only Providers can call this

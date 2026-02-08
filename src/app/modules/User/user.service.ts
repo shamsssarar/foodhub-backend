@@ -44,6 +44,29 @@ const getMyProviderProfile = async (userId: string) => {
   return result;
 };
 
+
+const assignCategoryToProvider = async (userId: string, categoryId: string) => {
+  // 1. Find the Category to make sure it exists (and get its name)
+  const category = await prisma.category.findUnique({
+    where: { id: categoryId },
+  });
+
+  if (!category) throw new Error("Category not found");
+
+  // 2. Update the Provider Profile
+  const result = await prisma.providerProfile.update({
+    where: { userId: userId },
+    data: {
+      categoryId: category.id,      // Link the ID
+      cuisineType: category.name,   // Update text to match official Name
+      status: "APPROVED",           // Auto-approve them!
+    },
+  });
+
+  return result;
+};
+
+
 const deleteUser = async (id: string) => {
   const result = await prisma.user.delete({
     where: { id },
@@ -56,5 +79,6 @@ export const UserService = {
   getAllUsersFromDB,
   updateProviderStatus,
   getMyProviderProfile,
+  assignCategoryToProvider,
   deleteUser,
 };
