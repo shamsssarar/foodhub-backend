@@ -7,11 +7,13 @@
 generator client {
   provider   = "prisma-client-js"
   engineType = "library"
+  previewFeatures = ["postgresqlExtensions"]
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  extensions = [vector]
 }
 
 // 1. Users Table (Customers & Providers)
@@ -170,4 +172,27 @@ model Review {
   updatedAt DateTime @updatedAt
 
   @@map("reviews")
+}
+
+
+model DocumentEmbedding {
+    id String @id @default(uuid(7))
+
+    chunkKey    String  @unique
+    sourceType  String
+    sourceId    String
+    sourceLabel String?
+    content     String
+    metadata    Json?
+
+    embedding Unsupported("vector(3072)")?
+
+    isDeleted Boolean   @default(false)
+    deletedAt DateTime?
+    createdAt DateTime  @default(now())
+    updatedAt DateTime  @updatedAt
+
+    @@index([sourceType], name: "idx_document_embeddings_sourceType")
+    @@index([sourceId], name: "idx_document_embeddings_sourceId")
+    @@map("document_embeddings")
 }

@@ -9,6 +9,7 @@ import { ProfileRoutes } from "./app/modules/ProviderProfile/profile.route";
 import { AuthRoutes } from "./app/modules/Auth/auth.route";
 import globalErrorHandler from "./app/middlewares/globalErrorHandler";
 import { ReviewRoutes } from "./app/modules/Review/review.route";
+import { AiRoutes } from "./app/modules/Ai/ai.route";
 
 const app: Application = express();
 
@@ -31,6 +32,7 @@ app.use(
   ProfileRoutes,
   ReviewRoutes,
   AuthRoutes,
+  AiRoutes,
 );
 app.use(globalErrorHandler);
 
